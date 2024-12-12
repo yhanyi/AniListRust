@@ -1,100 +1,47 @@
-use serde_json::json;
-
 mod utils;
 
-use utils::util::get_result;
-
-const QUERY: &str = "
-query ($id: Int) { # Define which variables will be used in the query (id)
-  Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
-    id
-    title {
-      english
-      native
-    }
-  }
-}
-";
-
-const PAGED_QUERY: &str = "
-query ($id: Int, $page: Int, $perPage: Int, $search: String) {
-    Page (page: $page, perPage: $perPage) {
-        pageInfo {
-            currentPage
-            hasNextPage
-            perPage
-        }
-        media (id: $id, search: $search) {
-            id
-            title {
-                english
-                native
-            }
-        }
-    }
-}
-";
-
-const CUSTOM_QUERY: &str = "
-query ($page: Int, $perPage: Int, $type: MediaType) {
-    Page (page: $page, perPage: $perPage) {
-        pageInfo {
-            currentPage
-            hasNextPage
-            perPage
-        }
-        media (type: $type, sort: [SCORE_DESC, POPULARITY_DESC]) {
-            id
-            title {
-                english
-                native
-            }
-            meanScore
-            popularity
-            episodes
-            status
-        }
-    }
-}
-";
+use utils::enums::{MediaStatus, MediaType};
+use utils::util::fetch;
+use utils::util::QueryOptions;
 
 #[tokio::main]
 async fn main() {
-    let mut json;
-    let mut result: serde_json::Value;
+    // let mut json;
+    // let mut result: serde_json::Value;
 
-    json = json!({"query": QUERY, "variables": {"id": 15125}});
-    result = get_result(json.to_string()).await;
-    println!("{:#}", result);
+    // json = json!({"query": TEST_QUERY_1, "variables": {"id": 15125}});
+    // result = get_result(json.to_string()).await;
+    // println!("{:#}", result);
 
-    json = json!({"query": PAGED_QUERY, "variables": {
-        "search": "Fate/Zero",
-        "page": 1,
-        "perPage": 3,
-    }});
-    result = get_result(json.to_string()).await;
-    println!("{:#}", result);
+    // json = json!({"query": TEST_QUERY_2, "variables": {
+    //     "search": "Fate/Zero",
+    //     "page": 1,
+    //     "perPage": 3,
+    // }});
+    // result = get_result(json.to_string()).await;
+    // println!("{:#}", result);
 
-    json = json!({
-        "query": CUSTOM_QUERY,
-        "variables": {
-            "page": 1,
-            "perPage": 10,
-            "type": "ANIME"
-        }
-    });
-    result = get_result(json.to_string()).await;
-    println!("Top anime result:\n{:#}\n", result);
+    let anime_options = QueryOptions {
+        media_type: MediaType::ANIME,
+        page: 1,
+        per_page: 10,
+        status: Some(MediaStatus::FINISHED),
+    };
 
-    // Custom query for top manga
-    json = json!({
-        "query": CUSTOM_QUERY,
-        "variables": {
-            "page": 1,
-            "perPage": 10,
-            "type": "MANGA"
-        }
-    });
-    result = get_result(json.to_string()).await;
-    println!("Top manga result:\n{:#}", result);
+    match fetch(anime_options).await {
+        Ok(result) => println!("Top Finished Anime:\n{:#}\n", result),
+        Err(e) => eprintln!("Error fetching anime: {}", e),
+    }
+
+    let manga_options = QueryOptions {
+        media_type: MediaType::MANGA,
+        page: 1,
+        per_page: 5,
+        status: Some(MediaStatus::RELEASING),
+    };
+
+    match fetch(manga_options).await {
+        Ok(result) => println!("Currently Releasing Manga:\n{:#}\n", result),
+        Err(e) => eprintln!("Error fetching manga: {}", e),
+    }
 }
