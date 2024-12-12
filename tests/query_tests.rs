@@ -2,6 +2,51 @@ use anilist_rust::utils::models::{TEST_QUERY_1, TEST_QUERY_2};
 use anilist_rust::utils::util::get_result;
 use serde_json::json;
 
+const EXPECTED_RESULT_1: &str = r#"{
+    "data": {
+        "Media": {
+            "id": 15125,
+            "title": {
+                "romaji": "Teekyuu",
+                "english": "Teekyuu",
+                "native": "てーきゅう"
+            }
+        }
+    }
+}"#;
+
+const EXPECTED_RESULT_2: &str = r#"{
+    "data": {
+        "Page": {
+            "pageInfo": {
+                "currentPage": 1,
+                "hasNextPage": true,
+                "perPage": 3
+            },
+            "media": [
+                {
+                    "id": 55191,
+                    "title": {
+                        "romaji": "Fate/Zero"
+                    }
+                },
+                {
+                    "id": 10087,
+                    "title": {
+                        "romaji": "Fate/Zero"
+                    }
+                },
+                {
+                    "id": 33649,
+                    "title": {
+                        "romaji": "Fate/Zero"
+                    }
+                }
+            ]
+        }
+    }
+}"#;
+
 #[tokio::test]
 async fn test_basic_anime_query() {
     let json = json!({
@@ -12,17 +57,10 @@ async fn test_basic_anime_query() {
     });
 
     let result = get_result(json.to_string()).await;
+    let expected: serde_json::Value =
+        serde_json::from_str(EXPECTED_RESULT_1).expect("Expected result should be valid JSON");
 
-    assert!(
-        result.get("data").is_some(),
-        "Response should contain data field"
-    );
-
-    let media = result["data"]["Media"]
-        .as_object()
-        .expect("Media should be an object");
-    assert!(media.contains_key("id"), "Media should contain an id");
-    assert!(media.contains_key("title"), "Media should contain a title");
+    assert_eq!(result, expected, "Response should match expected JSON");
 }
 
 #[tokio::test]
@@ -37,33 +75,8 @@ async fn test_paged_search_query() {
     });
 
     let result = get_result(json.to_string()).await;
+    let expected: serde_json::Value =
+        serde_json::from_str(EXPECTED_RESULT_2).expect("Expected result should be valid JSON");
 
-    assert!(
-        result.get("data").is_some(),
-        "Response should contain data field"
-    );
-
-    let page = result["data"]["Page"]
-        .as_object()
-        .expect("Page should be an object");
-    assert!(page.contains_key("pageInfo"), "Should contain pageInfo");
-    assert!(page.contains_key("media"), "Should contain media");
-
-    let media = page["media"].as_array().expect("Media should be an array");
-    assert!(media.len() <= 3, "Should return at most 3 results");
-
-    // Test first media entry has required fields
-    if let Some(first_entry) = media.first() {
-        let first_entry = first_entry
-            .as_object()
-            .expect("Media entry should be an object");
-        assert!(
-            first_entry.contains_key("id"),
-            "Media entry should contain an id"
-        );
-        assert!(
-            first_entry.contains_key("title"),
-            "Media entry should contain a title"
-        );
-    }
+    assert_eq!(result, expected, "Response should match expected JSON");
 }

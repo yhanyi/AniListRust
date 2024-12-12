@@ -1,16 +1,17 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub enum MediaType {
-    ANIME,
-    MANGA,
+    Anime,
+    Manga,
 }
 
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 pub enum MediaStatus {
-    FINISHED,
-    RELEASING,
-    NOT_YET_RELEASED,
-    CANCELLED,
-    HIATUS,
+    Finished,
+    Releasing,
+    NotYetReleased,
+    Cancelled,
+    Hiatus,
 }
